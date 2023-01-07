@@ -9,7 +9,7 @@ from torch import nn
 from tqdm import tqdm
 
 
-class Train:
+class TrainEval:
     def __init__(
         self,
         model: torch.nn.Module,
@@ -19,7 +19,8 @@ class Train:
         metric_fx: Literal["Accuracy", "MAE", "MSE"] = None,
         device: str = "cpu",
     ) -> None:
-        """Conducts the training procedure for a PyTorch model.
+        """Conducts the training procedure for a PyTorch model and also
+        adds some evaluation functionality.
 
         Args:
             model (torch.nn.Module): PyTorch model
@@ -43,6 +44,7 @@ class Train:
         self.train_dataloader = train_dataloader
         self.test_dataloader = test_dataloader
         self.criterion = criterion
+        self.device = device
         # TODO Instantiate metric_fx
 
         # Instantiate loss and metric dictionaries:
@@ -113,7 +115,7 @@ class Train:
                 X_test, y_test = X_test.to(self.device), y_test.to(self.device)
 
                 # Forward pass
-                y_pred_test = self.model(y_test)
+                y_pred_test = self.model(X_test)
 
                 # Calculate the test loss
                 loss = self.criterion(y_pred_test, y_test)
@@ -127,7 +129,7 @@ class Train:
 
         return test_loss, test_metric
 
-    def _time_model(start_time: float, end_time: float) -> float:
+    def _time_model(self, start_time: float, end_time: float) -> float:
         """Calculates the total training time of the model
 
         Args:
@@ -172,3 +174,6 @@ class Train:
 
         # Gather final time
         self.run_time = self._time_model(start_time=start, end_time=end)
+
+    def evaluate():
+        pass
