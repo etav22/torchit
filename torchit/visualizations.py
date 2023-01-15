@@ -1,13 +1,15 @@
-import torch
 import random
-import matplotlib.pyplot as plt
 from typing import Tuple
+
+import matplotlib.pyplot as plt
+import torch
+
 
 def visualize_samples(
     dataset: torch.utils.data.Dataset,
     num_samples: int,
-    figsize: Tuple[int, int]=(10, 6),
-    seed: int=42
+    figsize: Tuple[int, int] = (10, 6),
+    seed: int = 42,
 ):
     """Returns a subplot of randomly sampled images from a torch dataset.
 
@@ -18,7 +20,7 @@ def visualize_samples(
         seed (int, optional): Random seed for reproducibility. Defaults to 42.
 
     Raises:
-        ValueError: If more than 10 samples are given, the function does not plot. 
+        ValueError: If more than 10 samples are given, the function does not plot.
     """
 
     # Check the number of samples:
@@ -33,10 +35,12 @@ def visualize_samples(
     if num_samples % 3 == 0:
         n_row = int(num_samples / 3)
         n_col = 3
-    elif num_samples == 2:  # have this "exception" because two graphs look better side-by-side
+    elif (
+        num_samples == 2
+    ):  # have this "exception" because two graphs look better side-by-side
         n_row = 1
         n_col = 2
-    elif num_samples % 2 == 0 : 
+    elif num_samples % 2 == 0:
         n_row = 2
         n_col = int(num_samples / 2)
 
@@ -46,7 +50,7 @@ def visualize_samples(
 
     # Iterate over the list of random indeces and create a graph for each
     for i, idx in enumerate(random_idx):
-        
+
         # Gather the image and label:
         img, label = dataset[idx]
 
@@ -57,9 +61,3 @@ def visualize_samples(
     # Tighten the axes and show the plot
     plt.tight_layout()
     plt.show()
-
-
-
-
-
-

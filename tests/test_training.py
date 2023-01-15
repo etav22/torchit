@@ -1,9 +1,11 @@
-from torchit.training import TrainEval
-from torchvision.datasets import MNIST
-from torch.utils.data import DataLoader
-from torch import nn
-import torchvision.transforms as T
 import torch
+import torchvision.transforms as T
+from torch import nn
+from torch.utils.data import DataLoader
+from torchvision.datasets import MNIST
+
+from torchit.training import TrainEval
+
 
 # Instantiate a small model
 class NeuralNet(nn.Module):
@@ -12,7 +14,7 @@ class NeuralNet(nn.Module):
         self.layer_stack = nn.Sequential(
             nn.Flatten(),
             nn.Linear(in_features=input_size, out_features=hidden_units),
-            nn.Linear(in_features=hidden_units, out_features=output_shape)
+            nn.Linear(in_features=hidden_units, out_features=output_shape),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -30,34 +32,24 @@ def test_run():
 
     # Set the datasets
     train_dataset = MNIST(
-        root=DATA_ROOT,
-        train=True,
-        download=True,
-        transform=T.ToTensor()
+        root=DATA_ROOT, train=True, download=True, transform=T.ToTensor()
     )
     test_dataset = MNIST(
-        root=DATA_ROOT, 
-        train=False, 
-        download=True, 
-        transform=T.ToTensor()
+        root=DATA_ROOT, train=False, download=True, transform=T.ToTensor()
     )
 
     # Set the dataloaders
     train_dataloader = DataLoader(
-        dataset=train_dataset,
-        batch_size=BATCH_SIZE,
-        shuffle=True,
-        num_workers=0
+        dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=0
     )
     test_dataloader = DataLoader(
-        dataset=test_dataset,
-        batch_size=BATCH_SIZE,
-        shuffle=True,
-        num_workers=0
+        dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=0
     )
 
     # Instantiate the small model
-    model = NeuralNet(input_size=28*28, hidden_units=5, output_shape=len(test_dataset.classes))
+    model = NeuralNet(
+        input_size=28 * 28, hidden_units=5, output_shape=len(test_dataset.classes)
+    )
 
     # Set a criterion and optimizer
     criterion = nn.CrossEntropyLoss()
@@ -77,4 +69,8 @@ def test_run():
     # Check results
     print(model_train_eval.run_time)
 
+    # Make predictions with the model
+    print(model_train_eval.predict())
 
+    # Show the info of the model
+    print(model_train_eval.info(input_size=(32, 1, 28, 28)))
