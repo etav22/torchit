@@ -1,10 +1,14 @@
 """
 Functions to facilitiate training PyTorch model
 """
+import warnings
+# General imports
 from timeit import default_timer as timer
-from typing import Literal, Tuple
+from typing import Dict, Literal, Tuple
 
+# Torch imports
 import torch
+import torchinfo
 from torch import nn
 from tqdm import tqdm
 
@@ -45,6 +49,7 @@ class TrainEval:
         self.test_dataloader = test_dataloader
         self.criterion = criterion
         self.device = device
+        self.trained = False
         # TODO Instantiate metric_fx
 
         # Instantiate loss and metric dictionaries:
@@ -55,13 +60,16 @@ class TrainEval:
         self.run_time = 0
 
     def _train_epoch(self, optimizer: nn.Module) -> Tuple[float, float]:
-        """Trains the model for a single epoch.
+        """Trains the model for a single epoch. In training, both
+        loss and a pre-defined test-metric are calculated in each batch.
+        The loss and test-metrics are then averaged over the length of the dataloader
+        at the end of the epoch.
 
         Args:
             optimizer (nn.Module): Optimizes the training loss of the model.
 
         Returns:
-            Tuple[float, float]: Training loss and training metric.
+            Tuple[float, float]: Average  training loss and training metric.
         """
         # Set the model to train mode
         self.model.train()
@@ -95,10 +103,13 @@ class TrainEval:
         return train_loss, train_metric
 
     def _test_epoch(self) -> Tuple[float, float]:
-        """Tests the model for a single epoch
+        """Tests the model for a single epoch. In testing, both
+        loss and a pre-defined test-metric are calculated in each batch.
+        The loss and test-metrics are then averaged over the length of the dataloader
+        at the end of the epoch.
 
         Returns:
-            Tuple[float, float]: Test loss and test metric.
+            Tuple[float, float]: Average test loss and test metric.
         """
 
         # Set the model to eval mode
@@ -130,17 +141,17 @@ class TrainEval:
         return test_loss, test_metric
 
     def _time_model(self, start_time: float, end_time: float) -> float:
-        """Calculates the total training time of the model
+        """Calculates the total training time of the model.
 
         Args:
-            start_time (float): Time model starts training
-            end_time (float): Time model stops training
+            start_time (float): Time model starts training.
+            end_time (float): Time model stops training.
 
         Returns:
-            float: Total training time in seconds
+            float: Total training time in seconds.
         """
         # Calculate the total run time
-        total_run_time = start_time - end_time
+        total_run_time = end_time - start_time
 
         # Print out the total time
         print(f"Time to run model: {total_run_time:.5f} seconds")
@@ -148,6 +159,12 @@ class TrainEval:
         return total_run_time
 
     def train(self, num_epochs: int, optimizer: torch.nn.Module) -> None:
+        """_summary_
+
+        Args:
+            num_epochs (int): _description_
+            optimizer (torch.nn.Module): _description_
+        """
         # Start timer
         start = timer()
 
@@ -172,8 +189,67 @@ class TrainEval:
         # End timer
         end = timer()
 
+        # Switch model to trained
+        self.trained = True
+
         # Gather final time
         self.run_time = self._time_model(start_time=start, end_time=end)
 
-    def evaluate():
-        pass
+    def predict(self) -> Dict[str, list]:
+        """Generates a list of predictions based on the test dataloader that is
+        passed into the model during initialization. This function then returns
+        a dictionary containing two keys:
+
+            - predictions
+            - labels
+
+        Each contain a list for the predicted and true value for each item in the
+        test dataloader
+
+        Returns:
+            Dict[str, list]: Results dictionary with both predictions and labels.
+        """
+        # Output a warning for non-trained model
+        if self.trained is False:
+            warnings.warn(
+                "The model is not yet trained. Evaluation will be as good as random"
+            )
+
+        # Instantiate dictionary to house predictions
+        results = {"predictions": [], "labels": []}
+
+        # Set the model to eval and use inference
+        self.model.eval()
+        with torch.inference_mode():
+            # Itereate over the dataloader
+            for X_eval, y_eval in tqdm(self.test_dataloader):
+                # Send the data to the device
+                X_eval, y_eval = X_eval.to(self.device), y_eval.to(self.device)
+
+                # Make the predictions
+                y_preds_eval = self.model(X_eval)
+
+                # Convert the models to predictions:
+                y_labels = torch.argmax(y_preds_eval, dim=1)
+
+                # Append both the predictions an output list
+                results["predictions"].append(y_labels.cpu())
+                results["labels"].append(y_eval)
+        
+        return results
+
+    def info(self, input_size: tuple) -> torchinfo.ModelStatistics:
+        """Provdies an information summary for the torch model by using
+        the torchinfo.summary function. The info returned is:
+
+            - Model Layers
+            - Number of params
+            - Model size
+
+        Args:
+            input_size (tuple): Input size of the image tensors.
+
+        Returns:
+            torchinfo.ModelStatistics: Informative summary of the model.
+        """
+        return torchinfo.summary(self.model, input_size=input_size)
