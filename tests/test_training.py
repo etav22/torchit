@@ -69,8 +69,8 @@ def test_run():
     # Check results
     print(model_train_eval.run_time)
 
-    # Make predictions with the model
-    print(model_train_eval.predict())
-
     # Show the info of the model
     print(model_train_eval.info(input_size=(32, 1, 28, 28)))
+
+    # Save the model
+    model_train_eval.save()

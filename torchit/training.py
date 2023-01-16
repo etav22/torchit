@@ -1,8 +1,10 @@
 """
 Functions to facilitiate training PyTorch model
 """
-import warnings
+import os
 # General imports
+import warnings
+from pathlib import Path
 from timeit import default_timer as timer
 from typing import Dict, Literal, Tuple
 
@@ -17,6 +19,7 @@ class TrainEval:
     def __init__(
         self,
         model: torch.nn.Module,
+        model_name: str,
         train_dataloader: torch.utils.data.DataLoader,
         test_dataloader: torch.utils.data.DataLoader,
         criterion: torch.nn.Module,
@@ -45,6 +48,7 @@ class TrainEval:
         self.model = model.to(
             device
         )  # if model not already on device, which defaults to cpu
+        self.model_name = model_name
         self.train_dataloader = train_dataloader
         self.test_dataloader = test_dataloader
         self.criterion = criterion
@@ -235,11 +239,40 @@ class TrainEval:
                 # Append both the predictions an output list
                 results["predictions"].append(y_labels.cpu())
                 results["labels"].append(y_eval)
-        
+
         return results
 
+    def save(self, model_dir: str = "models"):
+        """Saves the trained model to the desired root directory. If
+        no direcotry is specified, the model will be saved to a directory called
+        "models."
+
+        Args:
+            model_dir (str, optional): Directory in which to save model. Defaults to "models".
+        """
+        # Output a warning for non-trained model
+        if self.trained is False:
+            warnings.warn(
+                """
+                The model is not yet trained. Meaning the model will be the
+                same as when the class was instantiated.
+                """
+            )
+
+        # Get the root directory
+        root_dir = Path(__file__).parent.parent
+
+        # Default location where the model will be saved
+        model_dir = os.path.join(root_dir, model_dir)
+
+        # Create the directory if it doesn't already exist
+        os.makedirs(model_dir, exist_ok=True)
+
+        # Save the model
+        torch.save(self.model.state_dict(), f=os.path.join(model_dir, self.model_name))
+
     def info(self, input_size: tuple) -> torchinfo.ModelStatistics:
-        """Provdies an information summary for the torch model by using
+        """Provides an information summary for the torch model by using
         the torchinfo.summary function. The info returned is:
 
             - Model Layers
