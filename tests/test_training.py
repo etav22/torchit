@@ -4,7 +4,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST
 
-from torchit.training import TrainEval
+from torchit.training import Torched
 
 
 # Instantiate a small model
@@ -56,21 +56,25 @@ def test_run():
     optimizer = torch.optim.SGD(params=model.parameters(), lr=0.01)
 
     # Instantiate the traineval class
-    model_train_eval = TrainEval(
-        model=model,
+    torched_model = Torched(model=model)
+
+    # Train the model
+    torched_model.train(
+        num_epochs=NUM_EPOCHS,
         train_dataloader=train_dataloader,
         test_dataloader=test_dataloader,
         criterion=criterion,
+        optimizer=optimizer,
     )
 
-    # Train the model
-    model_train_eval.train(num_epochs=NUM_EPOCHS, optimizer=optimizer)
-
     # Check results
-    print(model_train_eval.run_time)
+    print(torched_model.run_time)
 
     # Show the info of the model
-    print(model_train_eval.info(input_size=(32, 1, 28, 28)))
+    print(torched_model.info(input_size=(32, 1, 28, 28)))
+
+    # Show the model name:
+    print(torched_model.name)
 
     # Save the model
-    model_train_eval.save()
+    torched_model.save()
