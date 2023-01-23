@@ -136,3 +136,6 @@ test_data
 
 # DS Store
 .DS_Store
+
+# Ignore model outputs
+/models

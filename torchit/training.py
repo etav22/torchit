@@ -15,15 +15,11 @@ from torch import nn
 from tqdm import tqdm
 
 
-class TrainEval:
+class Torched:
     def __init__(
         self,
         model: torch.nn.Module,
-        model_name: str,
-        train_dataloader: torch.utils.data.DataLoader,
-        test_dataloader: torch.utils.data.DataLoader,
-        criterion: torch.nn.Module,
-        metric_fx: Literal["Accuracy", "MAE", "MSE"] = None,
+        model_name: str = "my_torched_model",
         device: str = "cpu",
     ) -> None:
         """Conducts the training procedure for a PyTorch model and also
@@ -31,16 +27,7 @@ class TrainEval:
 
         Args:
             model (torch.nn.Module): PyTorch model
-            train_dataloader (torch.utils.data.DataLoader):
-                Iterable dataset containing the train data.
-            test_dataloader (torch.utils.data.DataLoader):
-                Iterable dataset containing the test data.
-            criterion (torch.nn.Module): Also known as the loss function
-                - calculates the difference between predicted and true.
-            metric (Literal[&quot;Accuracy&quot;,
-                    &quot;MAE&quot;,
-                    &quot;MSE&quot;]):
-                Sets metric to be used during training. Defaults to None.
+            model_name (str, optional): Name of the model. Defaults to "my_torched_model".
             device (str, optional): Device to train on. Defaults to "cpu".
         """
 
@@ -48,13 +35,9 @@ class TrainEval:
         self.model = model.to(
             device
         )  # if model not already on device, which defaults to cpu
-        self.model_name = model_name
-        self.train_dataloader = train_dataloader
-        self.test_dataloader = test_dataloader
-        self.criterion = criterion
+        self.name = model_name
         self.device = device
         self.trained = False
-        # TODO Instantiate metric_fx
 
         # Instantiate loss and metric dictionaries:
         self.loss = {"train": [], "test": []}
@@ -162,13 +145,30 @@ class TrainEval:
 
         return total_run_time
 
-    def train(self, num_epochs: int, optimizer: torch.nn.Module) -> None:
-        """_summary_
+    def train(
+        self,
+        num_epochs: int,
+        train_dataloader: torch.utils.data.DataLoader,
+        test_dataloader: torch.utils.data.DataLoader,
+        criterion: torch.nn.Module,
+        optimizer: torch.nn.Module,
+    ) -> None:
+        """Composes both the the _train_epoch() and _test_epoch() to
+        fully train the neural net.
 
         Args:
-            num_epochs (int): _description_
-            optimizer (torch.nn.Module): _description_
+            num_epochs (int): Number of times we propogate through the neural net.
+            train_dataloader (torch.utils.data.DataLoader): Iterable dataset containing the train data.
+            test_dataloader (torch.utils.data.DataLoader): Iterable dataset containing the test data.
+            criterion (torch.nn.Module): Also known as the loss function.
+                Calculates the difference between predicted and true.
+            optimizer (torch.nn.Module): Algorithm used to find the optimal weights for a minimum loss
         """
+        # Instantiate class attributes
+        self.train_dataloader = train_dataloader
+        self.test_dataloader = test_dataloader
+        self.criterion = criterion
+
         # Start timer
         start = timer()
 
@@ -269,7 +269,7 @@ class TrainEval:
         os.makedirs(model_dir, exist_ok=True)
 
         # Save the model
-        torch.save(self.model.state_dict(), f=os.path.join(model_dir, self.model_name))
+        torch.save(self.model.state_dict(), f=os.path.join(model_dir, self.name))
 
     def info(self, input_size: tuple) -> torchinfo.ModelStatistics:
         """Provides an information summary for the torch model by using
